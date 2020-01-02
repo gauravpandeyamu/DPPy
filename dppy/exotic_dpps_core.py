@@ -96,6 +96,94 @@ def ust_sampler_wilson(list_of_neighbors, root=None,
     return wilson_tree_graph
 
 
+def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
+    """
+    Implement the Wilson's algorthm described in Graph sampling with determinantal processes, Nicolas Tremblay et al., 2017
+    It samples a set of nodes from the directed graph of adjacency matrix W """
+        
+    rng = check_random_state(random_state)
+
+    # Initialization
+    nb_nodes = W.shape[0]
+    Y = []
+    Nu = np.zeros(nb_nodes, dtype=bool)
+    all_path = []
+    
+    # Compute the probabilities of transition
+    transition_probabilities = np.zeros((nb_nodes, nb_nodes+1))
+    transition_probabilities[:, :nb_nodes] = W
+    transition_probabilities[:, -1] = absorbing_weight
+    Norm = np.sum(W, axis=1) + absorbing_weight
+    transition_probabilities[np.nonzero(Norm), :] = transition_probabilities[np.nonzero(Norm), :]/Norm[np.nonzero(Norm)][:, None]
+
+    
+    while np.sum(Nu) != nb_nodes:
+        
+        # Initialize the root,
+        walk_index = rng.choice(np.nonzero(np.invert(Nu))[0])
+        
+        visited_nodes = np.zeros(nb_nodes, dtype=bool)
+        visited_nodes[walk_index] = True
+        path = [walk_index]
+            
+        while True:
+            
+            transition = transition_probabilities[walk_index]
+            
+            if absorbing_weight == 0 and np.sum(transition) == 0:
+                print("Case 0")
+                Nu[visited_nodes] = True
+                all_path.append(path)
+                break
+            
+            # Get next node
+            next_index = rng.choice(nb_nodes+1, p=transition)
+            
+            # If we end up in the sink, add node to Y, add path to Nu and quit
+            if next_index == nb_nodes:
+                print("Case 1")
+                Nu[visited_nodes] = 1
+                Y.append(walk_index)
+                all_path.append(path)
+                break
+            
+            # If we end in a node in Nu, add path to Nu and quit
+            elif Nu[next_index]:
+                print("Case 2")
+                Nu[visited_nodes] = 1
+                all_path.append(path)
+                break
+                
+            # If we loop over ourselves, erase the entire loop
+            elif visited_nodes[next_index]:
+                print("Case 3")
+                if sum(visited_nodes) == nb_nodes:
+                    print('Case 3a')
+                    Nu[visited_nodes] = True
+                    all_path.append(path)
+                    break
+                first_appearence = path.index(next_index)  # find 1st appearence of next_index in the path
+                nodes_loop = path[first_appearence:]  # identify nodes forming the loop
+                del path[first_appearence:]  # erase the loop
+                visited_nodes[nodes_loop] = False  # mark loopy nodes as not visited
+                
+                
+            # Else continue walk
+            walk_index = next_index
+            visited_nodes[next_index] = True
+            path.append(next_index)
+            #print("Nu=", Nu)
+            #print("path=", path)
+            
+    wilson_tree_from_path = nx.Graph()
+    wilson_tree_from_path.add_nodes_from([i for i in range(nb_nodes)])
+    for path in all_path:
+        tree_edges = [(path[i], path[i+1]) for i in range(len(path)-1)]
+        wilson_tree_from_path.add_edges_from(tree_edges)
+    
+    print("Nu=", Nu)
+    return Y, all_path, wilson_tree_from_path
+
 def ust_sampler_aldous_broder(list_of_neighbors, root=None,
                               random_state=None):
 

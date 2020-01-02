@@ -14,6 +14,9 @@
 
     `Documentation on ReadTheDocs <https://dppy.readthedocs.io/en/latest/exotic_dpps/index.html>`_
 """
+import sys
+print(sys.path)
+#sys.path.append('c:\\Users\Berenice\\Documents\\Polytechnique\\4A\\Cours MVA\\Graphs in Machine Learning\\Projet\\DPPy')
 
 from abc import ABCMeta, abstractmethod
 
@@ -24,7 +27,7 @@ from matplotlib import collections as mc  # see plot_diagram
 
 # For Uniform Spanning Trees
 import networkx as nx
-from dppy.exotic_dpps_core import ust_sampler_wilson, ust_sampler_aldous_broder
+from dppy.exotic_dpps_core import ust_sampler_wilson, ust_sampler_aldous_broder, ust_sampler_wilson_nodes
 from dppy.exact_sampling import proj_dpp_sampler_eig, proj_dpp_sampler_kernel
 
 # For DescentProcess
@@ -38,6 +41,9 @@ from dppy.exotic_dpps_core import RSK, xy_young_ru, limit_shape
 from dppy.exotic_dpps_core import uniform_permutation
 
 from dppy.utils import check_random_state
+
+# For maze sampling
+from dppy.maze import Maze
 
 
 #####################
@@ -485,7 +491,7 @@ class UST:
                           for v in range(self.nb_nodes)]
 
         self.sampling_mode = 'Wilson'  # Default (avoid eig_vecs computation)
-        self._sampling_modes = {'markov-chain': ['Wilson', 'Aldous-Broder'],
+        self._sampling_modes = {'markov-chain': ['Wilson', 'Aldous-Broder', 'Wilson_node'],
                                 'spectral-method': ['GS'],
                                 'projection-K-kernel': ['Schur', 'Chol']}
         self.list_of_samples = []
@@ -559,6 +565,17 @@ class UST:
             elif self.sampling_mode == 'Aldous-Broder':
                 sampl = ust_sampler_aldous_broder(self.neighbors,
                                                   random_state=rng)
+            
+            elif self.sampling_mode == 'Wilson_node':
+                W = np.zeros((self.nb_nodes, self.nb_nodes))
+                degree = np.array([len(self.neighbors[i]) for i in range(len(self.neighbors))])
+                indices = np.repeat(np.arange(self.nb_nodes), degree)
+                flatten_neighbors = [item for sublist in self.neighbors for item in sublist]
+                W[indices, flatten_neighbors] = 1
+                Y, P, sampl = ust_sampler_wilson_nodes(W, absorbing_weight=0.01, random_state=rng)
+                print("Y=", Y)
+                print("P=", P)
+                
 
         elif self.sampling_mode in self._sampling_modes['spectral-method']:
 
@@ -738,3 +755,31 @@ class UST:
                             0.05,
                             ax.get_position().height])
         plt.colorbar(heatmap, cax=cax)
+
+
+class UST_maze(UST):
+    
+    def __init__(self, n, m):
+        G = nx.Graph()
+        G.add_nodes_from([i for i in range(n*m)])
+        for i in range(n):
+            for j in range(m):
+                k = i*m + j
+                if j < m-1:
+                    G.add_edge(k,k+1)
+                if i < n-1:
+                    G.add_edge(k,k+m)
+        self.n_maze = n
+        self.m_maze = m
+        super().__init__(G)
+        
+    def sample_maze(self):
+        self.sample(mode='Wilson_node', root=None, random_state=None)
+        #self.plot_graph()
+        #self.plot()
+        #plt.show()
+        sample = self.list_of_samples[-1]
+        maze = Maze(self.m_maze, self.n_maze)
+        maze.maze_from_sample(sample)
+        print(maze)
+        maze.write_svg('maze.svg')
