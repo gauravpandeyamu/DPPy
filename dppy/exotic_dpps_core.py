@@ -131,7 +131,7 @@ def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
             transition = transition_probabilities[walk_index]
             
             if absorbing_weight == 0 and np.sum(transition) == 0:
-                print("Case 0")
+                #print("Case 0")
                 Nu[visited_nodes] = True
                 all_path.append(path)
                 break
@@ -141,7 +141,7 @@ def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
             
             # If we end up in the sink, add node to Y, add path to Nu and quit
             if next_index == nb_nodes:
-                print("Case 1")
+                #print("Case 1")
                 Nu[visited_nodes] = 1
                 Y.append(walk_index)
                 all_path.append(path)
@@ -149,14 +149,15 @@ def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
             
             # If we end in a node in Nu, add path to Nu and quit
             elif Nu[next_index]:
-                print("Case 2")
+                #print("Case 2")
                 Nu[visited_nodes] = 1
+                path.append(next_index)
                 all_path.append(path)
                 break
                 
             # If we loop over ourselves, erase the entire loop
             elif visited_nodes[next_index]:
-                print("Case 3")
+                #print("Case 3")
                 if sum(visited_nodes) == nb_nodes:
                     print('Case 3a')
                     Nu[visited_nodes] = True
@@ -181,7 +182,7 @@ def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
         tree_edges = [(path[i], path[i+1]) for i in range(len(path)-1)]
         wilson_tree_from_path.add_edges_from(tree_edges)
     
-    print("Nu=", Nu)
+    #print("Nu=", Nu)
     return Y, all_path, wilson_tree_from_path
 
 def ust_sampler_aldous_broder(list_of_neighbors, root=None,

@@ -16,7 +16,7 @@
 """
 import sys
 print(sys.path)
-#sys.path.append('c:\\Users\Berenice\\Documents\\Polytechnique\\4A\\Cours MVA\\Graphs in Machine Learning\\Projet\\DPPy')
+sys.path.append('c:\\Users\Berenice\\Documents\\Polytechnique\\4A\\Cours MVA\\Graphs in Machine Learning\\Projet\\DPPy')
 
 from abc import ABCMeta, abstractmethod
 
@@ -573,8 +573,6 @@ class UST:
                 flatten_neighbors = [item for sublist in self.neighbors for item in sublist]
                 W[indices, flatten_neighbors] = 1
                 Y, P, sampl = ust_sampler_wilson_nodes(W, absorbing_weight=0.01, random_state=rng)
-                print("Y=", Y)
-                print("P=", P)
                 
 
         elif self.sampling_mode in self._sampling_modes['spectral-method']:
