@@ -1,3 +1,8 @@
+#######################################################################################
+# Code adapted from https://scipython.com/blog/making-a-maze/
+#######################################################################################
+
+
 class Cell:
     """A cell in the maze.
 
@@ -39,6 +44,7 @@ class Maze:
         self.maze_map = [[Cell(x, y) for y in range(ny)] for x in range(nx)]
     
     def maze_from_sample(self, sample):
+        """Create the maze described by the spanning tree sample (networkx graph)"""
         edges = sample.edges()
         for (k1, k2) in edges:
             (j1, i1) = ((k1) // self.nx, (k1) % self.nx)

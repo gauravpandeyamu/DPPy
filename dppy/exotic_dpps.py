@@ -16,7 +16,7 @@
 """
 import sys
 print(sys.path)
-sys.path.append('c:\\Users\Berenice\\Documents\\Polytechnique\\4A\\Cours MVA\\Graphs in Machine Learning\\Projet\\DPPy')
+#sys.path.append('c:\\Users\Berenice\\Documents\\Polytechnique\\4A\\Cours MVA\\Graphs in Machine Learning\\Projet\\DPPy')
 
 from abc import ABCMeta, abstractmethod
 
@@ -567,12 +567,8 @@ class UST:
                                                   random_state=rng)
             
             elif self.sampling_mode == 'Wilson_node':
-                W = np.zeros((self.nb_nodes, self.nb_nodes))
-                degree = np.array([len(self.neighbors[i]) for i in range(len(self.neighbors))])
-                indices = np.repeat(np.arange(self.nb_nodes), degree)
-                flatten_neighbors = [item for sublist in self.neighbors for item in sublist]
-                W[indices, flatten_neighbors] = 1
-                Y, P, sampl = ust_sampler_wilson_nodes(W, absorbing_weight=0.01, random_state=rng)
+                W = nx.adjacency_matrix(self.graph).todense()
+                Y, P, sampl = ust_sampler_wilson_nodes(W, absorbing_weight=1, random_state=rng)
                 
 
         elif self.sampling_mode in self._sampling_modes['spectral-method']:
@@ -756,23 +752,25 @@ class UST:
 
 
 class UST_maze(UST):
+    """ Specific instance of the UST class which create an UST object with the graph of a maze of size n*m """
     
     def __init__(self, n, m):
         G = nx.Graph()
         G.add_nodes_from([i for i in range(n*m)])
-        for i in range(n):
-            for j in range(m):
-                k = i*m + j
-                if j < m-1:
-                    G.add_edge(k,k+1)
-                if i < n-1:
-                    G.add_edge(k,k+m)
+        nodes = np.resize(np.arange(n*m), (n, m))
+        edges_m = np.stack((nodes[:, :-1], nodes[:, 1:]), axis=-1).reshape((-1, 2))
+        edges_n = np.stack((nodes[:-1, :], nodes[1:, :]), axis=-1).reshape((-1, 2))
+        G.add_edges_from(edges_m)
+        G.add_edges_from(edges_n)
         self.n_maze = n
         self.m_maze = m
         super().__init__(G)
         
     def sample_maze(self):
-        self.sample(mode='Wilson_node', root=None, random_state=None)
+        """Create a random maze by sampling a spanning of the corresponding graph.
+        It generates a Maze object and saves it in a file "maze.svg".
+        """
+        self.sample(mode='Wilson', root=None, random_state=None)
         #self.plot_graph()
         #self.plot()
         #plt.show()

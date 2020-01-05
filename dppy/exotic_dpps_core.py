@@ -99,7 +99,35 @@ def ust_sampler_wilson(list_of_neighbors, root=None,
 def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
     """
     Implement the Wilson's algorthm described in Graph sampling with determinantal processes, Nicolas Tremblay et al., 2017
-    It samples a set of nodes from the directed graph of adjacency matrix W """
+    It samples a set of nodes from the directed graph of adjacency matrix W and extracts a random spanning tree from the trajectories of the random walks performed.
+    
+    
+    :param W:
+        Adjacency matrix of the graph
+    :type W:
+        array_like
+
+    :param absorbing_weight:
+        Weight of the node Delta added to the graph
+    :type absorbing_weight:
+        int
+
+
+    :return Y:
+        Set of nodes selected by the algorithm
+    :rtype Y:
+        list
+        
+    :return all_path:
+        All the trajectories of the random walks performed on the augmented graph
+    :rtype all_path:
+        list of list
+        
+    :return wilson_tree_from_path:
+        Random spanning tree of the graph
+    :rtype wilson_tree_from_path:
+        network Graph
+    """
         
     rng = check_random_state(random_state)
 
@@ -110,12 +138,9 @@ def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
     all_path = []
     
     # Compute the probabilities of transition
-    transition_probabilities = np.zeros((nb_nodes, nb_nodes+1))
-    transition_probabilities[:, :nb_nodes] = W
-    transition_probabilities[:, -1] = absorbing_weight
-    Norm = np.sum(W, axis=1) + absorbing_weight
-    transition_probabilities[np.nonzero(Norm), :] = transition_probabilities[np.nonzero(Norm), :]/Norm[np.nonzero(Norm)][:, None]
-
+    transition_probabilities = np.pad(W, [(0, 0), (0, 1)], mode='constant', constant_values=absorbing_weight).astype('float')
+    norm = np.sum(transition_probabilities, axis=1)
+    transition_probabilities[np.nonzero(norm), :] /= norm[np.nonzero(norm), None]
     
     while np.sum(Nu) != nb_nodes:
         
@@ -125,13 +150,14 @@ def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
         visited_nodes = np.zeros(nb_nodes, dtype=bool)
         visited_nodes[walk_index] = True
         path = [walk_index]
+        print("start path", walk_index)
             
         while True:
             
             transition = transition_probabilities[walk_index]
             
             if absorbing_weight == 0 and np.sum(transition) == 0:
-                #print("Case 0")
+                print("Case 0")
                 Nu[visited_nodes] = True
                 all_path.append(path)
                 break
@@ -141,7 +167,7 @@ def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
             
             # If we end up in the sink, add node to Y, add path to Nu and quit
             if next_index == nb_nodes:
-                #print("Case 1")
+                print("Case 1")
                 Nu[visited_nodes] = 1
                 Y.append(walk_index)
                 all_path.append(path)
@@ -149,7 +175,7 @@ def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
             
             # If we end in a node in Nu, add path to Nu and quit
             elif Nu[next_index]:
-                #print("Case 2")
+                print("Case 2")
                 Nu[visited_nodes] = 1
                 path.append(next_index)
                 all_path.append(path)
@@ -157,7 +183,7 @@ def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
                 
             # If we loop over ourselves, erase the entire loop
             elif visited_nodes[next_index]:
-                #print("Case 3")
+                print("Case 3")
                 if sum(visited_nodes) == nb_nodes:
                     print('Case 3a')
                     Nu[visited_nodes] = True
@@ -174,13 +200,13 @@ def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
             visited_nodes[next_index] = True
             path.append(next_index)
             #print("Nu=", Nu)
-            #print("path=", path)
+            print("path=", path)
             
     wilson_tree_from_path = nx.Graph()
-    wilson_tree_from_path.add_nodes_from([i for i in range(nb_nodes)])
-    for path in all_path:
-        tree_edges = [(path[i], path[i+1]) for i in range(len(path)-1)]
-        wilson_tree_from_path.add_edges_from(tree_edges)
+    print("all_path=", all_path)
+    tree_edges = list(chain.from_iterable(map(lambda x: zip(x[:-1], x[1:]), all_path)))
+    print("tree_edges=", tree_edges)
+    wilson_tree_from_path.add_edges_from(tree_edges)
     
     #print("Nu=", Nu)
     return Y, all_path, wilson_tree_from_path
