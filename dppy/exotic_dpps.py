@@ -487,9 +487,9 @@ class UST:
         self.edge_labels = {edge: r'$e_{}$'.format(i)
                             for i, edge in enumerate(self.edges)}
 
-        self.neighbors = [list(graph.neighbors(v))
-                          for v in range(self.nb_nodes)]
-
+        #self.neighbors = [list(graph.neighbors(v)) for v in range(self.nb_nodes)]
+        self.adjacency_matrix = nx.adjacency_matrix(self.graph)
+        
         self.sampling_mode = 'Wilson'  # Default (avoid eig_vecs computation)
         self._sampling_modes = {'markov-chain': ['Wilson', 'Aldous-Broder', 'Wilson_node'],
                                 'spectral-method': ['GS'],
@@ -559,16 +559,15 @@ class UST:
 
         if self.sampling_mode in self._sampling_modes['markov-chain']:
             if self.sampling_mode == 'Wilson':
-                sampl = ust_sampler_wilson(self.neighbors,
+                sampl = ust_sampler_wilson(self.adjacency_matrix,
                                            random_state=rng)
 
             elif self.sampling_mode == 'Aldous-Broder':
-                sampl = ust_sampler_aldous_broder(self.neighbors,
+                sampl = ust_sampler_aldous_broder(self.adjacency_matrix,
                                                   random_state=rng)
             
             elif self.sampling_mode == 'Wilson_node':
-                W = nx.adjacency_matrix(self.graph).todense()
-                Y, P, sampl = ust_sampler_wilson_nodes(W, absorbing_weight=1, random_state=rng)
+                Y, P, sampl = ust_sampler_wilson_nodes(self.adjacency_matrix, absorbing_weight=1, random_state=rng)
                 
 
         elif self.sampling_mode in self._sampling_modes['spectral-method']:
