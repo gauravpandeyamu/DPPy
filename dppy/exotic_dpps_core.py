@@ -36,14 +36,14 @@ from bisect import bisect_right  # for RSK
 from dppy.utils import check_random_state
 
 
-def ust_sampler_wilson(W, root=None,
+def ust_sampler_wilson(adjacency_matrix, root=None,
                        random_state=None):
     """
     Compute a random spanning tree of a graph G given by his adjacency matrix
     
-    param W:
+    param adjacency_matrix:
         Adjacency matrix of the Graph
-    param W:
+    type adjacency_matrix:
         scipy.sparse.csr_matrix
     """
     rng = check_random_state(random_state)
@@ -51,7 +51,7 @@ def ust_sampler_wilson(W, root=None,
     # Initialize the tree
     wilson_tree_graph = nx.Graph()
     #nb_nodes = len(list_of_neighbors)
-    nb_nodes = W.shape[0]
+    nb_nodes = adjacency_matrix.shape[0]
 
     # Initialize the root, if root not specified start from any node
     n0 = root if root else rng.choice(nb_nodes)  # size=1)[0]
@@ -61,14 +61,15 @@ def ust_sampler_wilson(W, root=None,
     nb_nodes_in_tree = 1
 
     path, branches = [], []  # branches of tree, temporary path
+    
+    Weights = adjacency_matrix.toarray().astype('float')
+    Weights /= np.sum(Weights, axis=1)[:, None]
 
     while nb_nodes_in_tree < nb_nodes:  # |Tree| = |V| - 1
 
         # visit a neighbor of n0 uniformly at random
         #n1 = rng.choice(list_of_neighbors[n0])  # size=1)[0]
-        weights = (W.getrow(n0).toarray())[0].astype('float')
-        weights /= np.sum(weights)
-        n1 = rng.choice(np.arange(nb_nodes), p=weights)
+        n1 = rng.choice(nb_nodes, p=Weights[n0])
 
         if state[n1] == -1:  # not visited => continue the walk
 
@@ -107,15 +108,15 @@ def ust_sampler_wilson(W, root=None,
     return wilson_tree_graph
 
 
-def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
+def ust_sampler_wilson_nodes(adjacency_matrix, absorbing_weight=0, random_state=None):
     """
     Implement the Wilson's algorthm described in Graph sampling with determinantal processes, Nicolas Tremblay et al., 2017
-    It samples a set of nodes from the directed graph of adjacency matrix W and extracts a random spanning tree from the trajectories of the random walks performed.
+    It samples a set of nodes from the directed graph of adjacency matrix "adjacency_matrix" and extracts a random spanning tree from the trajectories of the random walks performed.
     
     
-    :param W:
+    :param adjacency_matrix:
         Adjacency matrix of the graph
-    :type W:
+    :type adjacency_matrix:
         scipy.sparse.csr_matrix
 
     :param absorbing_weight:
@@ -143,13 +144,13 @@ def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
     rng = check_random_state(random_state)
 
     # Initialization
-    nb_nodes = W.shape[0]
+    nb_nodes = adjacency_matrix.shape[0]
     Y = []
     Nu = np.zeros(nb_nodes, dtype=bool)
     all_path = []
     
     # Compute the probabilities of transition
-    transition_probabilities = np.pad(W.toarray(), [(0, 0), (0, 1)], mode='constant', constant_values=absorbing_weight).astype('float')
+    transition_probabilities = np.pad(adjacency_matrix.toarray(), [(0, 0), (0, 1)], mode='constant', constant_values=absorbing_weight).astype('float')
     norm = np.sum(transition_probabilities, axis=1)
     transition_probabilities[np.nonzero(norm), :] /= norm[np.nonzero(norm), None]
     
@@ -222,7 +223,7 @@ def ust_sampler_wilson_nodes(W, absorbing_weight=0, random_state=None):
     #print("Nu=", Nu)
     return Y, all_path, wilson_tree_from_path
 
-def ust_sampler_aldous_broder(W, root=None,
+def ust_sampler_aldous_broder(adjacency_matrix, root=None,
                               random_state=None):
 
     rng = check_random_state(random_state)
@@ -230,7 +231,7 @@ def ust_sampler_aldous_broder(W, root=None,
     # Initialize the tree
     aldous_tree_graph = nx.Graph()
     #nb_nodes = len(list_of_neighbors)
-    nb_nodes = W.shape[0]
+    nb_nodes = adjacency_matrix.shape[0]
 
     # Initialize the root, if root not specified start from any node
     n0 = root if root else rng.choice(nb_nodes)  # size=1)[0]
@@ -244,7 +245,7 @@ def ust_sampler_aldous_broder(W, root=None,
 
         # visit a neighbor of n0 uniformly at random
         #n1 = rng.choice(list_of_neighbors[n0])  # size=1)[0]
-        weights = (W.getrow(n0).toarray())[0].astype('float')
+        weights = (adjacency_matrix.getrow(n0).toarray())[0].astype('float')
         weights /= np.sum(weights)
         n1 = rng.choice(np.arange(nb_nodes), p=weights)
 

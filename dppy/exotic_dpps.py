@@ -567,7 +567,7 @@ class UST:
                                                   random_state=rng)
             
             elif self.sampling_mode == 'Wilson_node':
-                Y, P, sampl = ust_sampler_wilson_nodes(self.adjacency_matrix, absorbing_weight=1, random_state=rng)
+                set_nodes, all_path, sampl = ust_sampler_wilson_nodes(self.adjacency_matrix, absorbing_weight=1, random_state=rng)
                 
 
         elif self.sampling_mode in self._sampling_modes['spectral-method']:
@@ -759,6 +759,8 @@ class UST_maze(UST):
         nodes = np.resize(np.arange(n*m), (n, m))
         edges_m = np.stack((nodes[:, :-1], nodes[:, 1:]), axis=-1).reshape((-1, 2))
         edges_n = np.stack((nodes[:-1, :], nodes[1:, :]), axis=-1).reshape((-1, 2))
+        #edges_m = np.pad(edges_m, (0, 1), mode='constant', constant_values=10)
+        #G.add_weighted_edges_from(edges_m)
         G.add_edges_from(edges_m)
         G.add_edges_from(edges_n)
         self.n_maze = n
