@@ -519,7 +519,7 @@ class UST:
         """
         self.list_of_samples = []
 
-    def sample(self, mode='Wilson', root=None, random_state=None):
+    def sample(self, mode='Wilson', absorbing_weight=None, root=None, random_state=None):
         """ Sample a spanning of the underlying graph uniformly at random.
         It generates a networkx graph object.
 
@@ -567,7 +567,9 @@ class UST:
                                                   random_state=rng)
             
             elif self.sampling_mode == 'Wilson_node':
-                set_nodes, all_path, sampl = ust_sampler_wilson_nodes(self.adjacency_matrix, absorbing_weight=1, random_state=rng)
+                if absorbing_weight is None:
+                    absorbing_weight = 1
+                set_nodes, all_path, sampl = ust_sampler_wilson_nodes(self.adjacency_matrix, absorbing_weight=absorbing_weight, random_state=rng)
                 
 
         elif self.sampling_mode in self._sampling_modes['spectral-method']:
