@@ -753,30 +753,35 @@ class UST:
 class UST_maze(UST):
     """ Specific instance of the UST class which create an UST object with the graph of a maze of size n*m """
     
-    def __init__(self, n, m):
+    def __init__(self, n, m, weights_m = None, weights_n = None):
         G = nx.Graph()
         G.add_nodes_from([i for i in range(n*m)])
         nodes = np.resize(np.arange(n*m), (n, m))
         edges_m = np.stack((nodes[:, :-1], nodes[:, 1:]), axis=-1).reshape((-1, 2))
         edges_n = np.stack((nodes[:-1, :], nodes[1:, :]), axis=-1).reshape((-1, 2))
-        #edges_m = np.pad(edges_m, (0, 1), mode='constant', constant_values=10)
-        #G.add_weighted_edges_from(edges_m)
-        G.add_edges_from(edges_m)
-        G.add_edges_from(edges_n)
+        if weights_m is None:
+            weights_m = np.ones((edges_m.shape[0], 1))
+        if weights_n is None:
+            weights_n = np.ones((edges_n.shape[0], 1))
+        edges_m = np.concatenate([edges_m, weights_m], axis=1)
+        edges_n = np.concatenate([edges_n, weights_n], axis=1)
+        G.add_weighted_edges_from(edges_m)
+        G.add_weighted_edges_from(edges_n)
         self.n_maze = n
         self.m_maze = m
         super().__init__(G)
         
-    def sample_maze(self):
+    def sample_maze(self, mode='Wilson', show=True):
         """Create a random maze by sampling a spanning of the corresponding graph.
         It generates a Maze object and saves it in a file "maze.svg".
         """
-        self.sample(mode='Wilson', root=None, random_state=None)
+        self.sample(mode=mode, root=None, random_state=None)
         #self.plot_graph()
         #self.plot()
         #plt.show()
         sample = self.list_of_samples[-1]
         maze = Maze(self.m_maze, self.n_maze)
         maze.maze_from_sample(sample)
-        print(maze)
-        maze.write_svg('maze.svg')
+        if show:
+            print(maze)
+            maze.write_svg('maze.svg')

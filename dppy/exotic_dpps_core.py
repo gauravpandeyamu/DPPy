@@ -162,14 +162,14 @@ def ust_sampler_wilson_nodes(adjacency_matrix, absorbing_weight=0, random_state=
         visited_nodes = np.zeros(nb_nodes, dtype=bool)
         visited_nodes[walk_index] = True
         path = [walk_index]
-        print("start path", walk_index)
+        #print("start path", walk_index)
             
         while True:
             
             transition = transition_probabilities[walk_index]
             
             if absorbing_weight == 0 and np.sum(transition) == 0:
-                print("Case 0")
+                #print("Case 0")
                 Nu[visited_nodes] = True
                 all_path.append(path)
                 break
@@ -179,7 +179,7 @@ def ust_sampler_wilson_nodes(adjacency_matrix, absorbing_weight=0, random_state=
             
             # If we end up in the sink, add node to Y, add path to Nu and quit
             if next_index == nb_nodes:
-                print("Case 1")
+                #print("Case 1")
                 Nu[visited_nodes] = 1
                 Y.append(walk_index)
                 all_path.append(path)
@@ -187,7 +187,7 @@ def ust_sampler_wilson_nodes(adjacency_matrix, absorbing_weight=0, random_state=
             
             # If we end in a node in Nu, add path to Nu and quit
             elif Nu[next_index]:
-                print("Case 2")
+                #print("Case 2")
                 Nu[visited_nodes] = 1
                 path.append(next_index)
                 all_path.append(path)
@@ -195,9 +195,9 @@ def ust_sampler_wilson_nodes(adjacency_matrix, absorbing_weight=0, random_state=
                 
             # If we loop over ourselves, erase the entire loop
             elif visited_nodes[next_index]:
-                print("Case 3")
+                #print("Case 3")
                 if sum(visited_nodes) == nb_nodes:
-                    print('Case 3a')
+                    #print('Case 3a')
                     Nu[visited_nodes] = True
                     all_path.append(path)
                     break
@@ -212,12 +212,12 @@ def ust_sampler_wilson_nodes(adjacency_matrix, absorbing_weight=0, random_state=
             visited_nodes[next_index] = True
             path.append(next_index)
             #print("Nu=", Nu)
-            print("path=", path)
+            #print("path=", path)
             
     wilson_tree_from_path = nx.Graph()
-    print("all_path=", all_path)
+    #print("all_path=", all_path)
     tree_edges = list(chain.from_iterable(map(lambda x: zip(x[:-1], x[1:]), all_path)))
-    print("tree_edges=", tree_edges)
+    #print("tree_edges=", tree_edges)
     wilson_tree_from_path.add_edges_from(tree_edges)
     
     #print("Nu=", Nu)
