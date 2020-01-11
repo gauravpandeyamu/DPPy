@@ -15,8 +15,6 @@
     `Documentation on ReadTheDocs <https://dppy.readthedocs.io/en/latest/exotic_dpps/index.html>`_
 """
 import sys
-print(sys.path)
-#sys.path.append('c:\\Users\Berenice\\Documents\\Polytechnique\\4A\\Cours MVA\\Graphs in Machine Learning\\Projet\\DPPy')
 
 from abc import ABCMeta, abstractmethod
 

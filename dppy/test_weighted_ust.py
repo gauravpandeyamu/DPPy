@@ -1,6 +1,4 @@
 import sys
-#print(sys.path)
-#sys.path.append('c:\\Users\Berenice\\Documents\\Polytechnique\\4A\\Cours MVA\\Graphs in Machine Learning\\Projet\\DPPy')
 
 from dppy.exotic_dpps import UST, UST_maze
 from dppy.utils import find_all_spanning_trees
@@ -57,18 +55,27 @@ def plot_hist(G, tested_sampler=['Wilson', 'Aldous-Broder'], nbr_it=10000):
     labels = np.array(labels)
     index_sort = np.argsort(labels)
     labels = labels[index_sort]
-    sorted_values = [np.array(values[k])[index_sort] for k in range(nbr_modes)]
+    sorted_values = np.array([np.array(values[k])[index_sort] for k in range(nbr_modes)])
+    sorted_values /= np.sum(sorted_values, axis=1)[:, None]
     
+    #Add the theoretical distribution
+    labels_sampler = tested_sampler[:]
+    labels_sampler.append("Theoretical")
+    nbr_modes += 1
+    theo_values = labels / np.sum(labels)
+    final_values = np.zeros((nbr_modes, n_labels))
+    final_values[:-1, :] = sorted_values
+    final_values[-1, :] = theo_values
     
     x_labels = np.arange(n_labels)
     x = np.zeros((nbr_modes, n_labels))
-    width = 0.2
+    width = 0.3
     for k in range(nbr_modes):
-        x[k, :] = x_labels + (-1)**k*width/nbr_modes
+        x[k, :] = x_labels + (2*k - nbr_modes+1)*width/2
     
     fig, ax = plt.subplots()
     for k in range(nbr_modes):
-        rects = ax.bar(x[k], sorted_values[k], width, label=tested_sampler[k])
+        rects = ax.bar(x[k], final_values[k], width, label=labels_sampler[k])
         # # Uncomment to attach a text label above each bar displaying its height
         #for rect in rects:
         #    height = rect.get_height()
@@ -86,7 +93,7 @@ def plot_hist(G, tested_sampler=['Wilson', 'Aldous-Broder'], nbr_it=10000):
     
     
     
-def statistic_test(G, tested_sampler=['Wilson', 'Aldous-Broder'], nbr_it=10000, tol=10**(-3)):
+def statistical_test(G, tested_sampler=['Wilson', 'Aldous-Broder'], nbr_it=10000, tol=0.05):
     """ Perform a chi-square test to check that the different spanning trees sampled have a distribution proportional to their weight"""
     ust = UST(G)
     all_spanning_trees = find_all_spanning_trees(G)
@@ -111,8 +118,8 @@ def statistic_test(G, tested_sampler=['Wilson', 'Aldous-Broder'], nbr_it=10000, 
         
         _, pval = chisquare(f_obs=freq, f_exp=theo)
         
-        if 1 - pval < tol:
-            print("Test passed for mode " + mode)
+        if pval > tol:
+            print("Test passed for mode " + mode, " ; p-value =", pval)
         else:
             print("Test not passed for mode " + mode, " ; p-value =", pval)
     
@@ -122,10 +129,12 @@ G = nx.Graph()
 G.add_nodes_from(np.arange(5))
 edges = [(0, 2, 1), (0, 3, 3), (1, 2, 5), (1, 4, 1), (2, 3, 1), (2, 4, 2), (3, 4, 2)]
 G.add_weighted_edges_from(edges)
+ust = UST(G)
+ust.plot_graph()
 
-statistic_test(G, nbr_it=10000)
+#statistical_test(G, nbr_it=10000)
 
-plot_hist(G, nbr_it=10000)
+#plot_hist(G, nbr_it=10000)
 
 
 

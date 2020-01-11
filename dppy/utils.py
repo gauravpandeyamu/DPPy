@@ -1,6 +1,7 @@
 from string import ascii_lowercase
 import numpy as np
 from numpy.linalg import det, matrix_rank
+import networkx as nx
 
 
 def check_random_state(seed):

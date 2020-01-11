@@ -6,8 +6,6 @@ from matplotlib import pyplot as plt
 from scipy.stats import chisquare
 
 import sys
-#print(sys.path)
-#sys.path.append('c:\\Users\Berenice\\Documents\\Polytechnique\\4A\\Cours MVA\\Graphs in Machine Learning\\Projet\\DPPy')
 
 from dppy.exotic_dpps_core import ust_sampler_wilson_nodes
 from dppy.exotic_dpps import UST
@@ -58,7 +56,9 @@ Pairs_count = Pairs_count + Pairs_count.T
 
 # Compute the theoritical and empirical distribution of each node
 singleton_marginal_th = np.diag(K_q) / np.trace(K_q)
+singleton_marginal_th /= np.sum(singleton_marginal_th)
 singleton_marginal_emp = Singletons_count / nbr_it
+singleton_marginal_emp /= np.sum(singleton_marginal_emp)
 _, pval_singleton = chisquare(f_obs=singleton_marginal_emp, f_exp=singleton_marginal_th)
 
 # Compute the theoritical and empirical distribution of each pair of nodes
